@@ -1,8 +1,12 @@
 package gui;
 
+import model.BridgeException;
 import model.Program;
+import model.SimpleList;
+import model.SimpleListFunction;
 
 import javax.swing.*;
+import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,21 +14,32 @@ import java.awt.event.ActionListener;
 /**
  * Created by michal on 2.10.2016.
  */
-public class Main {
+public class Main implements SimpleListFunction{
     private Program model;
     private JPanel prefab;
     private JTabbedPane tabbedPane1;
     private JComboBox comboBox1;
     private JButton startButton;
     private JTextPane textPane1;
+    private JButton sendFRAMEButton;
+    private Main self = this;
 
     public Main() {
         startButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                comboBox1.getModel();
+                try {
+                    model.openItergaceThread(comboBox1.getSelectedIndex(),self);
+                } catch (BridgeException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
+        sendFRAMEButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                model.sendFrame(comboBox1.getSelectedIndex());
+            }
+        });
     }
 
     public static void main(String[] args) {
@@ -41,6 +56,22 @@ public class Main {
         model = new Program();
         comboBox1 = new JComboBox(new DeviceComboBoxModel(model));
         comboBox1.setSelectedIndex(0);
+    }
+
+    public <T> void print(T o) {
+        //not running in swing...
+        String test = "";
+        if (o instanceof String) {
+            test = (String) o;
+        }
+        System.out.println(test);
+
+//        SwingUtilities.invokeLater(new Runnable() {
+//            public void run() {
+//                Document doc = textPane1.getDocument();
+//                doc.insertString(doc.getLength(),test,null);
+//            }
+//        });
     }
 }
 
