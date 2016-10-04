@@ -174,8 +174,12 @@ public class Program {
                         PcapPacket pcapPacketCopy = new PcapPacket(packet1);
                         handler.setWinVersion(true);
                         handler.setPort(port);
-                        handler.nextPacket(packet1,list);
                     }
+                    else {
+                        continue;
+                    }
+                    handler.nextPacket(packet1,list);
+
                 }
             }
 
@@ -205,8 +209,11 @@ public class Program {
                         PcapPacket pcapPacketCopy = new PcapPacket(packet1);
                         handler.setWinVersion(false);
                         handler.setPort(port);
-                        handler.nextPacket(packet1,list);
                     }
+                    else {
+                        continue;
+                    }
+                    handler.nextPacket(packet1,list);
                 }
             }
         }//end of unix/linux function
