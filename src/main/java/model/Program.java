@@ -26,6 +26,26 @@ public class Program {
 
     private final Object pcapLock0 = new Object();
     private final Object pcapLock1 = new Object();
+    private Boolean loop0 = true;
+    private Boolean loop1 = true;
+
+    public synchronized Boolean getLoop(int port) {
+        if (port == 0 ){
+            return loop0;
+        }
+        else {
+            return loop1;
+        }
+    }
+
+    public synchronized void setLoop(int port,Boolean loop) {
+        if (port == 0) {
+            this.loop0 = loop;
+        }
+        else {
+            this.loop1 = loop;
+        }
+    }
 
     public static final int snaplen = 64 * 1024;           // Capture all packets, no trucation
     public static final int flags = Pcap.MODE_PROMISCUOUS;
@@ -36,7 +56,8 @@ public class Program {
     public Program() throws BridgeException {
         alldevs = new ArrayList<PcapIf>();
         errbuf = new StringBuilder(); // For any error msgs
-        handler0 = new FrameHandler();
+        handler0 = new FrameHandler(this);
+        handler1 = new FrameHandler(this);
         list = new SimpleList<String>();
         this.getDevices();
     }
@@ -62,48 +83,61 @@ public class Program {
         }
     }
 
-    public void sendFrame(int num){
-
+    public void sendFrame(int port,PcapPacket packet){
         System.out.println("Sending button");
         if (WinPcap.isSupported() == true) {
+            WinPcap winPcap;
+            Object pcapLock;
+            if (port == 0) {
+                winPcap = winPcap0;
+                pcapLock = pcapLock0;
+            }
+            else {
+                winPcap = winPcap1;
+                pcapLock = pcapLock1;
+            }
 //            PcapIf device = alldevs.get(num);
 //            WinPcap pcap0 = WinPcap.open(device.getName(), snaplen, flagsWin, timeout, auth, errbuf);
 //            if (pcap0 == null) {
 //                System.err.println(errbuf.toString());
 //                return;
 //            }
-            synchronized (pcapLock0) {
+            synchronized (pcapLock) {
                 System.out.println("Sending");
-                byte[] a = new byte[14];
-                Arrays.fill(a, (byte) 0xee);
-                ByteBuffer b = ByteBuffer.wrap(a);
-                if (winPcap0.sendPacket(b) != Pcap.OK) {
-                    System.err.println(winPcap0.getErr());
+                if (winPcap.sendPacket(packet) != Pcap.OK) {
+                    System.err.println(winPcap.getErr());
                 }
                 System.out.println("Sending2");
             }
         }
         else {
-            synchronized (pcapLock0) {
+            Pcap pcap;
+            Object pcapLock;
+            if (port == 0) {
+                pcap = pcap0;
+                pcapLock = pcapLock0;
+            }
+            else {
+                pcap = pcap1;
+                pcapLock = pcapLock1;
+            }
+            synchronized (pcapLock) {
                 System.out.println("Sending");
-                byte[] a = new byte[14];
-                Arrays.fill(a, (byte) 0xee);
-                ByteBuffer b = ByteBuffer.wrap(a);
-                if (pcap0.sendPacket(b) != Pcap.OK) {
-                    System.err.println(winPcap0.getErr());
+                if (pcap.sendPacket(packet) != Pcap.OK) {
+                    System.err.println(pcap.getErr());
                 }
                 System.out.println("Sending2");
             }
         }
     }
 
-    public void openItergaceThread(int num, final SimpleListFunction function) throws BridgeException{
+    public void openIterfaceThread(int num, final int port, final SimpleListFunction function) throws BridgeException{
         final int numFinal = num;
         Thread thread = new Thread(){
             @Override
             public void run() {
                 try {
-                    openInterface(numFinal,function);
+                    openInterface(numFinal,port,function);
                 } catch (BridgeException e) {
                     e.printStackTrace();
                 }
@@ -112,21 +146,35 @@ public class Program {
         thread.start();
     }
 
-    public void openInterface(int num,SimpleListFunction function) throws BridgeException {
+    public void openInterface(int num,int port,SimpleListFunction function) throws BridgeException {
         list.addListener(function);
         PcapPacket packet1 = new PcapPacket(JMemory.Type.POINTER);
 
         if (WinPcap.isSupported() == true) {
             PcapIf device = alldevs.get(num);
-            winPcap0 = WinPcap.open(device.getName(), snaplen, flagsWin, timeout, auth, errbuf);
-            if (winPcap0 == null) {
+            WinPcap winPcap = WinPcap.open(device.getName(), snaplen, flagsWin, timeout, auth, errbuf);
+            FrameHandler handler;
+            final Object pcapLock;
+            if (port == 0) {
+                winPcap0 = winPcap;
+                handler = handler0;
+                pcapLock = pcapLock0;
+            }
+            else {
+                winPcap1 = winPcap;
+                handler = handler1;
+                pcapLock = pcapLock1;
+            }
+            if (winPcap == null) {
                 throw new BridgeException("smola");
             }
-            while(true) {
-                synchronized (pcapLock0) {
-                    if(winPcap0.nextEx(packet1) == Pcap.NEXT_EX_OK) {
+            while(getLoop(port)) {
+                synchronized (pcapLock) {
+                    if(winPcap.nextEx(packet1) == Pcap.NEXT_EX_OK) {
                         PcapPacket pcapPacketCopy = new PcapPacket(packet1);
-                        handler0.nextPacket(packet1,list);
+                        handler.setWinVersion(true);
+                        handler.setPort(port);
+                        handler.nextPacket(packet1,list);
                     }
                 }
             }
@@ -134,20 +182,42 @@ public class Program {
         }//end of windows function
         else {
             PcapIf device = alldevs.get(num);
-            pcap0 = Pcap.openLive(device.getName(), snaplen, flagsWin, timeout, errbuf);
-            pcap0.setDirection(Pcap.Direction.IN);
-            if (pcap0 == null) {
+            Pcap pcap = Pcap.openLive(device.getName(), snaplen, flagsWin, timeout, errbuf);
+            pcap.setDirection(Pcap.Direction.IN);
+            FrameHandler handler;
+            Object pcapLock;
+            if (port == 0 ){
+                pcap0 = pcap;
+                handler = handler0;
+                pcapLock = pcapLock0;
+            }
+            else {
+                pcap1 = pcap;
+                handler = handler1;
+                pcapLock = pcapLock1;
+            }
+            if (pcap == null) {
                 throw new BridgeException("smola");
             }
-            while(true) {
-                synchronized (pcapLock0) {
-                    if(pcap0.nextEx(packet1) == Pcap.NEXT_EX_OK) {
+            while(getLoop(port)) {
+                synchronized (pcapLock) {
+                    if(pcap.nextEx(packet1) == Pcap.NEXT_EX_OK) {
                         PcapPacket pcapPacketCopy = new PcapPacket(packet1);
-                        handler0.nextPacket(packet1,list);
+                        handler.setWinVersion(false);
+                        handler.setPort(port);
+                        handler.nextPacket(packet1,list);
                     }
                 }
             }
         }//end of unix/linux function
+        //reseting Loops
+        setLoop(0,true);
+        setLoop(1,true);
+    }
+
+    public void closeInterface(){
+        setLoop(0,false);
+        setLoop(1,false);
     }
 
 
