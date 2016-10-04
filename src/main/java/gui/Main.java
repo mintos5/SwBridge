@@ -53,14 +53,18 @@ public class Main implements SimpleListFunction{
     }
 
     private void createUIComponents() {
-        model = new Program();
+        try {
+            model = new Program();
+        } catch (BridgeException e) {
+            e.printStackTrace();
+        }
         comboBox1 = new JComboBox(new DeviceComboBoxModel(model));
-        comboBox1.setSelectedIndex(0);
     }
 
     public <T> void print(T o) {
         //not running in swing...
         String test = "";
+
         if (o instanceof String) {
             test = (String) o;
         }
@@ -83,7 +87,6 @@ class DeviceComboBoxModel extends AbstractListModel implements ComboBoxModel{
 
     public DeviceComboBoxModel(Program model) {
         this.model = model;
-        this.model.getDevices();
     }
 
     public void setSelectedItem(Object o) {

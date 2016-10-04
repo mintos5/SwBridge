@@ -8,13 +8,14 @@ import org.jnetpcap.protocol.lan.Ethernet;
 /**
  * Created by michal on 3.10.2016.
  */
-public class FrameHandler {
+public class FrameHandler implements PcapPacketHandler<SimpleList<String>>{
 
-    public static void nextPacket(PcapPacket pcapPacket, SimpleList<String> s) {
+    public void nextPacket(PcapPacket pcapPacket, SimpleList<String> s) {
         System.out.print("found one>");
         Ethernet eth0 = new Ethernet();
         if (pcapPacket.hasHeader(eth0)) {
             s.add(FormatUtils.mac(eth0.destination()));
         }
     }
+
 }
