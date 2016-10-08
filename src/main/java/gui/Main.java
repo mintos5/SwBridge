@@ -38,8 +38,8 @@ public class Main implements SimpleListFunction{
             public void actionPerformed(ActionEvent actionEvent) {
                 if (!running) {
                     try {
-                        model.openIterfaceThread(comboBox1.getSelectedIndex(),1,self);
-                        //model.openIterfaceThread(comboBox2.getSelectedIndex(),1,self);
+                        model.openIterfaceThread(comboBox1.getSelectedIndex(),0,self);
+                        model.openIterfaceThread(comboBox2.getSelectedIndex(),1,self);
                     } catch (BridgeException e) {
                         e.printStackTrace();
                     }
@@ -73,7 +73,7 @@ public class Main implements SimpleListFunction{
                 } catch (PeeringException e) {
                     e.printStackTrace();
                 }
-                model.sendFrame(comboBox1.getSelectedIndex(),p2);
+                model.sendFrame(0,p2);
             }
         });
     }

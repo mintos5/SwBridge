@@ -36,10 +36,16 @@ public class FrameHandler implements PcapPacketHandler<SimpleList<String>>{
 
     public void nextPacket(PcapPacket pcapPacket, SimpleList<String> s) {
         if (port == 0){
-            System.out.println(pcapPacket.toHexdump());
+            //System.out.println(pcapPacket.toHexdump());
+            System.out.println("SEND_0");
+            model.sendFrame(1,pcapPacket);
+            System.out.println("END_0");
         }
         else {
-            s.add(pcapPacket.toHexdump());
+            System.out.println("SEND_1");
+            //s.add(pcapPacket.toHexdump());
+            model.sendFrame(0,pcapPacket);
+            System.out.println("END_1");
         }
         //DANGEROUS
         //model.sendFrame(0,pcapPacket);
