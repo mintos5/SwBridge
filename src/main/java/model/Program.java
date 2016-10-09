@@ -24,7 +24,7 @@ public class Program {
     SimpleList<String> list;
     public static final int snaplen = 64 * 1024;
     public static final int flags = Pcap.MODE_PROMISCUOUS;
-    public static final int timeout = 10;
+    public static final int timeout = 1;
 
     private final Object pcapLock0 = new Object();
     private final Object pcapLock1 = new Object();
