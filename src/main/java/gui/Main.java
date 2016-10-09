@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
  */
 public class Main implements SimpleListFunction{
     private Program model;
+    private static JFrame frame;
     private JPanel prefab;
     private JTabbedPane tabbedPane1;
     private JComboBox comboBox1;
@@ -49,6 +50,12 @@ public class Main implements SimpleListFunction{
                 else {
                     model.closeInterface();
                     startButton.setText("Start");
+                    String out0 = model.getHandler(0).getCounter()+" readed frames from PORT0";
+                    String out1 = model.getHandler(1).getCounter()+" readed frames from PORT1";
+                    StringBuilder out = new StringBuilder(out0);
+                    out.append(System.getProperty("line.separator"));
+                    out.append(out1);
+                    JOptionPane.showMessageDialog(Main.frame,out.toString());
                     running = false;
                 }
 
@@ -80,7 +87,7 @@ public class Main implements SimpleListFunction{
 
     public static void main(String[] args) {
         Main mainko = new Main();
-        JFrame frame = new JFrame("SwBridge");
+        frame = new JFrame("SwBridge");
         frame.setContentPane(mainko.prefab);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setMinimumSize(new Dimension(600,300));

@@ -10,20 +10,17 @@ import org.jnetpcap.protocol.lan.Ethernet;
  */
 public class FrameHandler implements PcapPacketHandler<SimpleList<String>>{
 
-    boolean winVersion = false;
     int port;
     Program model;
+    long counter;
 
     public FrameHandler(Program model) {
         this.model = model;
+        this.counter = 0;
     }
 
-    public boolean isWinVersion() {
-        return winVersion;
-    }
-
-    public void setWinVersion(boolean winVersion) {
-        this.winVersion = winVersion;
+    public long getCounter() {
+        return counter;
     }
 
     public int getPort() {
@@ -35,26 +32,15 @@ public class FrameHandler implements PcapPacketHandler<SimpleList<String>>{
     }
 
     public void nextPacket(PcapPacket pcapPacket, SimpleList<String> s) {
+        counter++;
         if (port == 0){
-            //System.out.println(pcapPacket.toHexdump());
-            System.out.println("SEND_0");
+            System.out.println(pcapPacket.toHexdump());
             model.sendFrame(1,pcapPacket);
-            System.out.println("END_0");
         }
         else {
-            System.out.println("SEND_1");
-            //s.add(pcapPacket.toHexdump());
+            s.add(pcapPacket.toHexdump());
             model.sendFrame(0,pcapPacket);
-            System.out.println("END_1");
         }
-        //DANGEROUS
-        //model.sendFrame(0,pcapPacket);
-        //model.sendFrame(1,pcapPacket);
-        //pcapPacket.send
-//        Ethernet eth0 = new Ethernet();
-//        if (pcapPacket.hasHeader(eth0)) {
-//            s.add(FormatUtils.mac(eth0.destination()));
-//        }
     }
 
 }
