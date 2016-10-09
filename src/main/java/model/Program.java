@@ -19,17 +19,22 @@ public class Program {
 
     List<PcapIf> alldevs;
     StringBuilder errbuf;
-    WinPcap winPcap0, winPcap1;
     Pcap pcap0, pcap1;
     FrameHandler handler0,handler1;
     SimpleList<String> list;
+    public static final int snaplen = 64 * 1024;
+    public static final int flags = Pcap.MODE_PROMISCUOUS;
+    public static final int timeout = 10;
 
     private final Object pcapLock0 = new Object();
     private final Object pcapLock1 = new Object();
-    private Boolean loop0 = true;
-    private Boolean loop1 = true;
+    private final Object test = new Object();
+    private volatile Boolean loop0 = true;
+    private volatile Boolean loop1 = true;
+    private volatile Boolean senderFirst0 = false;
+    private volatile Boolean senderFirst1 = false;
 
-    public synchronized Boolean getLoop(int port) {
+    public Boolean getLoop(int port) {
         if (port == 0 ){
             return loop0;
         }
@@ -38,7 +43,7 @@ public class Program {
         }
     }
 
-    public synchronized void setLoop(int port,Boolean loop) {
+    public void setLoop(int port,Boolean loop) {
         if (port == 0) {
             this.loop0 = loop;
         }
@@ -47,11 +52,32 @@ public class Program {
         }
     }
 
-    public static final int snaplen = 64 * 1024;           // Capture all packets, no trucation
-    public static final int flags = Pcap.MODE_PROMISCUOUS;
-    public static final int flagsWin = WinPcap.OPENFLAG_NOCAPTURE_LOCAL;
-    public static final int timeout = 5;           // 5 millis timeout
-    public static final WinPcapRmtAuth auth = null;
+    public Boolean getSenderFirst(int port) {
+        if (port == 0) {
+            return senderFirst0;
+        }
+        else {
+            return senderFirst1;
+        }
+    }
+
+    public void setSenderFirst(int port,Boolean senderFirst) {
+        if (port == 0) {
+            this.senderFirst0 = senderFirst;
+        }
+        else {
+            this.senderFirst1 = senderFirst;
+        }
+    }
+
+    public FrameHandler getHandler(int port) {
+        if (port == 0){
+            return handler0;
+        }
+        else {
+            return handler1;
+        }
+    }
 
     public Program() throws BridgeException {
         alldevs = new ArrayList<PcapIf>();
@@ -86,12 +112,15 @@ public class Program {
             pcap = pcap1;
             pcapLock = pcapLock1;
         }
+        setSenderFirst(port,true);
         synchronized (pcapLock) {
-            //System.out.println("Sending");
+            System.out.println("Sending from port "+port);
             if (pcap.sendPacket(packet) != Pcap.OK) {
                 System.err.println(pcap.getErr());
             }
             //System.out.println("Sending2");
+            setSenderFirst(port,false);
+            pcapLock.notify();
         }
     }
 
@@ -115,8 +144,8 @@ public class Program {
         PcapPacket packet1 = new PcapPacket(JMemory.Type.POINTER);
 
         PcapIf device = alldevs.get(num);
-        Pcap pcap = Pcap.openLive(device.getName(), snaplen, flagsWin, timeout, errbuf);
-        //pcap.setDirection(Pcap.Direction.IN);
+        Pcap pcap = Pcap.openLive(device.getName(), snaplen, flags, timeout, errbuf);
+        pcap.setDirection(Pcap.Direction.IN);
         FrameHandler handler;
         Object pcapLock;
         if (port == 0 ){
@@ -132,27 +161,37 @@ public class Program {
         if (pcap == null) {
             throw new BridgeException("smola");
         }
-        while(getLoop(port)) {
-            synchronized (pcapLock) {
-                if(pcap.nextEx(packet1) == Pcap.NEXT_EX_OK) {
-                    PcapPacket pcapPacketCopy = new PcapPacket(packet1);
-                    handler.setWinVersion(false);
-                    handler.setPort(port);
-                }
-                else {
-                    continue;
-                }
-            }
-            handler.nextPacket(packet1,list);
-        }
         //reseting Loops
         setLoop(0,true);
         setLoop(1,true);
+        while(getLoop(port)) {
+            int result = 0;
+            synchronized (pcapLock) {
+                //System.out.println("Citanie "+port);
+                if (getSenderFirst(port)){
+                    try {
+                        pcapLock.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                result = pcap.nextEx(packet1);
+            }
+            if(result == Pcap.NEXT_EX_OK) {
+                PcapPacket pcapPacketCopy = new PcapPacket(packet1);
+                handler.setPort(port);
+                handler.nextPacket(packet1,list);
+            }
+            else {
+                continue;
+            }
+        }
     }
 
     public void closeInterface(){
         setLoop(0,false);
         setLoop(1,false);
+        System.out.println("SHUTDOWN");
     }
 
 
