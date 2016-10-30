@@ -16,13 +16,18 @@ import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Created by michal on 2.10.2016.
  */
 public class Main implements SimpleListFunction{
     private Program model;
+    private GuiMacTableModel guiMacTableModel;
     private static JFrame frame;
     private JPanel prefab;
     private JTabbedPane tabbedPane1;
@@ -31,6 +36,7 @@ public class Main implements SimpleListFunction{
     private JTextPane textPane1;
     private JButton sendFRAMEButton;
     private JComboBox comboBox2;
+    private JTable table1;
     private Main self = this;
     private Boolean running = false;
 
@@ -80,7 +86,18 @@ public class Main implements SimpleListFunction{
                 } catch (PeeringException e) {
                     e.printStackTrace();
                 }
-                model.sendFrame(0,p2);
+                //model.sendFrame(0,p2);
+                ArrayList<NetworkInterface> interfaces = null;
+                try {
+                    interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+                    for (NetworkInterface info : interfaces){
+                        if(info.isUp()){
+                            System.out.println(info.getName());
+                        }
+                    }
+                } catch (SocketException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
@@ -97,7 +114,9 @@ public class Main implements SimpleListFunction{
 
     private void createUIComponents() {
         try {
-            model = new Program();
+            guiMacTableModel = new GuiMacTableModel();
+            model = new Program(guiMacTableModel);
+            table1 = new JTable(guiMacTableModel);
         } catch (BridgeException e) {
             e.printStackTrace();
         }

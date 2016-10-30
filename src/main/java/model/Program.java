@@ -1,15 +1,12 @@
 package model;
 
+import gui.GuiMacTableModel;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapIf;
 import org.jnetpcap.nio.JMemory;
 import org.jnetpcap.packet.PcapPacket;
-import org.jnetpcap.winpcap.WinPcap;
-import org.jnetpcap.winpcap.WinPcapRmtAuth;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,6 +18,7 @@ public class Program {
     StringBuilder errbuf;
     Pcap pcap0, pcap1;
     FrameHandler handler0,handler1;
+    MacTable table;
     SimpleList<String> list;
     public static final int snaplen = 64 * 1024;
     public static final int flags = Pcap.MODE_PROMISCUOUS;
@@ -44,6 +42,9 @@ public class Program {
     }
 
     public void setLoop(int port,Boolean loop) {
+        if (loop==false){
+            table.disableTimer();
+        }
         if (port == 0) {
             this.loop0 = loop;
         }
@@ -79,11 +80,12 @@ public class Program {
         }
     }
 
-    public Program() throws BridgeException {
+    public Program(GuiMacTableModel guiMacTableModel) throws BridgeException {
         alldevs = new ArrayList<PcapIf>();
         errbuf = new StringBuilder(); // For any error msgs
-        handler0 = new FrameHandler(this);
-        handler1 = new FrameHandler(this);
+        table= new MacTable(guiMacTableModel);
+        handler0 = new FrameHandler(this,table);
+        handler1 = new FrameHandler(this,table);
         list = new SimpleList<String>();
         this.getDevices();
     }
@@ -145,7 +147,7 @@ public class Program {
 
         PcapIf device = alldevs.get(num);
         Pcap pcap = Pcap.openLive(device.getName(), snaplen, flags, timeout, errbuf);
-        pcap.setDirection(Pcap.Direction.IN);
+        //pcap.setDirection(Pcap.Direction.INOUT);
         FrameHandler handler;
         Object pcapLock;
         if (port == 0 ){

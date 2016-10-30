@@ -13,10 +13,12 @@ public class FrameHandler implements PcapPacketHandler<SimpleList<String>>{
     int port;
     Program model;
     long counter;
+    MacTable macTable;
 
-    public FrameHandler(Program model) {
+    public FrameHandler(Program model,MacTable macTable) {
         this.model = model;
         this.counter = 0;
+        this.macTable = macTable;
     }
 
     public long getCounter() {
@@ -32,14 +34,19 @@ public class FrameHandler implements PcapPacketHandler<SimpleList<String>>{
     }
 
     public void nextPacket(PcapPacket pcapPacket, SimpleList<String> s) {
+        int destinationPort;
         counter++;
         if (port == 0){
             System.out.println(pcapPacket.toHexdump());
-            model.sendFrame(1,pcapPacket);
+            destinationPort = macTable.findPort(pcapPacket,port);
+            if (destinationPort!=-1){
+                //model.sendFrame(destinationPort,pcapPacket);
+            }
         }
         else {
             s.add(pcapPacket.toHexdump());
-            model.sendFrame(0,pcapPacket);
+            macTable.findPort(pcapPacket,port);
+            //model.sendFrame(0,pcapPacket);
         }
     }
 
