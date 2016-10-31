@@ -8,17 +8,20 @@ import org.jnetpcap.protocol.lan.Ethernet;
 /**
  * Created by michal on 3.10.2016.
  */
-public class FrameHandler implements PcapPacketHandler<SimpleList<String>>{
+public class FrameHandler{
 
     int port;
     Program model;
     long counter;
     MacTable macTable;
+    SimpleList<String> list;
 
-    public FrameHandler(Program model,MacTable macTable) {
+    public FrameHandler(int port,Program model,MacTable macTable,SimpleList<String> list) {
+        this.port = port;
         this.model = model;
         this.counter = 0;
         this.macTable = macTable;
+        this.list = list;
     }
 
     public long getCounter() {
@@ -33,21 +36,30 @@ public class FrameHandler implements PcapPacketHandler<SimpleList<String>>{
         this.port = port;
     }
 
-    public void nextPacket(PcapPacket pcapPacket, SimpleList<String> s) {
+    public void nextPacket(PcapPacket pcapPacket) {
         int destinationPort;
         counter++;
-        if (port == 0){
-            System.out.println(pcapPacket.toHexdump());
-            destinationPort = macTable.findPort(pcapPacket,port);
-            if (destinationPort!=-1){
-                //model.sendFrame(destinationPort,pcapPacket);
-            }
+        destinationPort = macTable.findPort(pcapPacket,port);
+        if (destinationPort==port){
+            System.out.println("Same PORT");
+            list.add(pcapPacket.toHexdump());
+        }
+        if (destinationPort!=-1){
+            model.sendFrame(destinationPort,pcapPacket);
+            list.add(pcapPacket.toHexdump());
         }
         else {
-            s.add(pcapPacket.toHexdump());
-            macTable.findPort(pcapPacket,port);
-            //model.sendFrame(0,pcapPacket);
+            System.out.println("Broadcasting");
+            if(port == 0){
+                model.sendFrame(1,pcapPacket);
+                list.add(pcapPacket.toHexdump());
+            }
+            else {
+                model.sendFrame(0,pcapPacket);
+                list.add(pcapPacket.toHexdump());
+            }
         }
+        System.out.println(pcapPacket.toHexdump());
     }
 
 }

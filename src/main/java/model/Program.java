@@ -11,15 +11,15 @@ import java.util.List;
 
 /**
  * Created by michal on 2.10.2016.
+ * Main program...
  */
 public class Program {
 
-    List<PcapIf> alldevs;
-    StringBuilder errbuf;
-    Pcap pcap0, pcap1;
-    FrameHandler handler0,handler1;
-    MacTable table;
-    SimpleList<String> list;
+    private List<PcapIf> alldevs;
+    private StringBuilder errbuf;
+    private Pcap pcap0, pcap1;
+    private FrameHandler handler0,handler1;
+    private MacTable table;
     public static final int snaplen = 64 * 1024;
     public static final int flags = Pcap.MODE_PROMISCUOUS;
     public static final int timeout = 1;
@@ -80,13 +80,12 @@ public class Program {
         }
     }
 
-    public Program(GuiMacTableModel guiMacTableModel) throws BridgeException {
+    public Program(GuiMacTableModel guiMacTableModel,SimpleList<String>[] logs) throws BridgeException {
         alldevs = new ArrayList<PcapIf>();
         errbuf = new StringBuilder(); // For any error msgs
         table= new MacTable(guiMacTableModel);
-        handler0 = new FrameHandler(this,table);
-        handler1 = new FrameHandler(this,table);
-        list = new SimpleList<String>();
+        handler0 = new FrameHandler(0,this,table,logs[0]);
+        handler1 = new FrameHandler(1,this,table,logs[1]);
         this.getDevices();
     }
 
@@ -126,13 +125,13 @@ public class Program {
         }
     }
 
-    public void openIterfaceThread(int num, final int port, final SimpleListFunction function) throws BridgeException{
+    public void openIterfaceThread(int num, final int port) throws BridgeException{
         final int numFinal = num;
         Thread thread = new Thread(){
             @Override
             public void run() {
                 try {
-                    openInterface(numFinal,port,function);
+                    openInterface(numFinal,port);
                 } catch (BridgeException e) {
                     e.printStackTrace();
                 }
@@ -141,8 +140,7 @@ public class Program {
         thread.start();
     }
 
-    public void openInterface(int num,int port,SimpleListFunction function) throws BridgeException {
-        list.addListener(function);
+    public void openInterface(int num,int port) throws BridgeException {
         PcapPacket packet1 = new PcapPacket(JMemory.Type.POINTER);
 
         PcapIf device = alldevs.get(num);
@@ -181,8 +179,7 @@ public class Program {
             }
             if(result == Pcap.NEXT_EX_OK) {
                 PcapPacket pcapPacketCopy = new PcapPacket(packet1);
-                handler.setPort(port);
-                handler.nextPacket(packet1,list);
+                handler.nextPacket(packet1);
             }
             else {
                 continue;
@@ -194,6 +191,10 @@ public class Program {
         setLoop(0,false);
         setLoop(1,false);
         System.out.println("SHUTDOWN");
+    }
+
+    public void resetMacTable() {
+        this.table.reset();
     }
 
 

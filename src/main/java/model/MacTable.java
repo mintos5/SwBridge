@@ -12,9 +12,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by root on 28.10.2016.
  */
 public class MacTable extends TimerTask{
+
     private final ReentrantLock hashLock = new ReentrantLock(true);
     private LinkedHashMap<String,MacTableEntry> hashMap = new LinkedHashMap();
-    private int defaulTTL = 2;
+    private int defaulTTL = 20;
     private Timer updateTable;
     private GuiMacTableModel guiTableModel;
 
@@ -26,6 +27,13 @@ public class MacTable extends TimerTask{
 
     public MacTable(GuiMacTableModel guiMacTableModel) {
         this.guiTableModel = guiMacTableModel;
+        updateTable = new Timer();
+        updateTable.schedule(this,0,1000);
+    }
+
+    public MacTable(GuiMacTableModel guiMacTableModel,int ttl) {
+        this.guiTableModel = guiMacTableModel;
+        this.defaulTTL = ttl;
         updateTable = new Timer();
         updateTable.schedule(this,0,1000);
     }
@@ -122,10 +130,18 @@ public class MacTable extends TimerTask{
         }
     }
 
+    public void reset(){
+        hashLock.lock();
+        try {
+           hashMap.clear();
+        }
+        finally {
+            hashLock.unlock();
+            guiTableModel.refresh();
+        }
+    }
 
-
-
-    public static void main(String[] args) {
+//    public static void main(String[] args) {
 //        hashMap.put("janka",new MacTableEntry(null,1,1));
 //        hashMap.put("jozko",new MacTableEntry(null,1,1));
 //        hashMap.put("erika",new MacTableEntry(null,1,1));
@@ -151,7 +167,7 @@ public class MacTable extends TimerTask{
 //        for (Map.Entry<String, MacTableEntry> entry : hashMap.entrySet()) {
 //            System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
 //        }
-    }
+//    }
 }
 
 class MacTableEntry{

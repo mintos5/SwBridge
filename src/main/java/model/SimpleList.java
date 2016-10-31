@@ -14,6 +14,12 @@ public class SimpleList<T> {
         this.listeners = new ArrayList<SimpleListFunction>();
     }
 
+    public SimpleList(SimpleListFunction function) {
+        this.arrayList = new ArrayList<T>();
+        this.listeners = new ArrayList<SimpleListFunction>();
+        addListener(function);
+    }
+
     public void addListener(SimpleListFunction function){
         listeners.add(function);
     }

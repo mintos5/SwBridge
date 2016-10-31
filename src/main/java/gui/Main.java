@@ -2,6 +2,7 @@ package gui;
 
 import model.BridgeException;
 import model.Program;
+import model.SimpleList;
 import model.SimpleListFunction;
 import org.jnetpcap.nio.JMemory;
 import org.jnetpcap.packet.JMemoryPacket;
@@ -25,7 +26,7 @@ import java.util.Collections;
 /**
  * Created by michal on 2.10.2016.
  */
-public class Main implements SimpleListFunction{
+public class Main{
     private Program model;
     private GuiMacTableModel guiMacTableModel;
     private static JFrame frame;
@@ -37,6 +38,10 @@ public class Main implements SimpleListFunction{
     private JButton sendFRAMEButton;
     private JComboBox comboBox2;
     private JTable table1;
+    private JTextPane textPane2;
+    private JButton resetMacButton;
+    private JTextField textField1;
+    private JButton setTTLButton;
     private Main self = this;
     private Boolean running = false;
 
@@ -45,8 +50,8 @@ public class Main implements SimpleListFunction{
             public void actionPerformed(ActionEvent actionEvent) {
                 if (!running) {
                     try {
-                        model.openIterfaceThread(comboBox1.getSelectedIndex(),0,self);
-                        model.openIterfaceThread(comboBox2.getSelectedIndex(),1,self);
+                        model.openIterfaceThread(comboBox1.getSelectedIndex(),0);
+                        model.openIterfaceThread(comboBox2.getSelectedIndex(),1);
                     } catch (BridgeException e) {
                         e.printStackTrace();
                     }
@@ -100,6 +105,12 @@ public class Main implements SimpleListFunction{
                 }
             }
         });
+        resetMacButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                model.resetMacTable();
+            }
+        });
     }
 
     public static void main(String[] args) {
@@ -113,37 +124,20 @@ public class Main implements SimpleListFunction{
     }
 
     private void createUIComponents() {
+        textPane1 = new JTextPane();
+        textPane2 = new JTextPane();
+        guiMacTableModel = new GuiMacTableModel();
+        SimpleList<String>[] arrayLogs = new SimpleList[2];
+        arrayLogs[0] = new SimpleList<String>(new Logs(textPane1));
+        arrayLogs[1] = new SimpleList<String>(new Logs(textPane2));
         try {
-            guiMacTableModel = new GuiMacTableModel();
-            model = new Program(guiMacTableModel);
-            table1 = new JTable(guiMacTableModel);
+            model = new Program(guiMacTableModel,arrayLogs);
         } catch (BridgeException e) {
             e.printStackTrace();
         }
+        table1 = new JTable(guiMacTableModel);
         comboBox1 = new JComboBox(new DeviceComboBoxModel(model));
         comboBox2 = new JComboBox(new DeviceComboBoxModel(model));
-    }
-
-    public <T> void print(T o) {
-        //not running in swing...
-        String test = "";
-
-        if (o instanceof String) {
-            test = (String) o;
-        }
-        final String fTest = test;
-
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                Document doc = textPane1.getDocument();
-                try {
-                    doc.insertString(doc.getLength(),fTest,null);
-                    doc.insertString(doc.getLength(),"\n",null);
-                } catch (BadLocationException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
     }
 }
 
@@ -171,5 +165,37 @@ class DeviceComboBoxModel extends AbstractListModel implements ComboBoxModel{
 
     public Object getElementAt(int i) {
         return model.getAlldevs().get(i).getName();
+    }
+}
+
+class Logs implements SimpleListFunction{
+
+    private JTextPane textPane1;
+
+    public Logs(JTextPane textPane1) {
+        this.textPane1 = textPane1;
+    }
+
+    @Override
+    public <T> void print(T o) {
+        //not running in swing...
+        String test = "";
+
+        if (o instanceof String) {
+            test = (String) o;
+        }
+        final String fTest = test;
+
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                Document doc = textPane1.getDocument();
+                try {
+                    doc.insertString(doc.getLength(),fTest,null);
+                    doc.insertString(doc.getLength(),"\n",null);
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 }
