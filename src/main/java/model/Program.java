@@ -1,5 +1,6 @@
 package model;
 
+import gui.GuiFilterTabModel;
 import gui.GuiMacTableModel;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapIf;
@@ -80,12 +81,13 @@ public class Program {
         }
     }
 
-    public Program(GuiMacTableModel guiMacTableModel,SimpleList<String>[] logs) throws BridgeException {
+    public Program(GuiMacTableModel guiMacTableModel, GuiFilterTabModel[] filtersTabGui,
+                   StatisticsGroup[] statistics) throws BridgeException {
         alldevs = new ArrayList<PcapIf>();
         errbuf = new StringBuilder(); // For any error msgs
         table= new MacTable(guiMacTableModel);
-        handler0 = new FrameHandler(0,this,table,logs[0]);
-        handler1 = new FrameHandler(1,this,table,logs[1]);
+        handler0 = new FrameHandler(0,this,table,filtersTabGui[0],statistics[0]);
+        handler1 = new FrameHandler(1,this,table,filtersTabGui[1],statistics[1]);
         this.getDevices();
     }
 
@@ -195,6 +197,13 @@ public class Program {
 
     public void resetMacTable() {
         this.table.reset();
+    }
+
+    public void addFilter(){
+
+    }
+    public void setMacTableTimer(int num){
+        table.setDefaulTTL(num);
     }
 
 

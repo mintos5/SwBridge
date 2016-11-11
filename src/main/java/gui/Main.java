@@ -1,9 +1,6 @@
 package gui;
 
-import model.BridgeException;
-import model.Program;
-import model.SimpleList;
-import model.SimpleListFunction;
+import model.*;
 import org.jnetpcap.nio.JMemory;
 import org.jnetpcap.packet.JMemoryPacket;
 import org.jnetpcap.packet.JPacket;
@@ -29,19 +26,47 @@ import java.util.Collections;
 public class Main{
     private Program model;
     private GuiMacTableModel guiMacTableModel;
+    private GuiFilterTabModel[] guiFilterTabArray;
     private static JFrame frame;
     private JPanel prefab;
     private JTabbedPane tabbedPane1;
     private JComboBox comboBox1;
     private JButton startButton;
     private JTextPane textPane1;
-    private JButton sendFRAMEButton;
     private JComboBox comboBox2;
     private JTable table1;
     private JTextPane textPane2;
     private JButton resetMacButton;
-    private JTextField textField1;
+    private JTextField textFieldTTL;
     private JButton setTTLButton;
+    private JTextField log1TextField1;
+    private JTextField log1TextField2;
+    private JComboBox log1comboBox;
+    private JCheckBox log1checkBox;
+    private JButton addFilterButton1;
+    private JButton updateButton1;
+    private JButton removeButton1;
+    private JTable filter1Table;
+    private JButton addFilterButton2;
+    private JButton updateButton2;
+    private JButton removeButton2;
+    private JTable filter2Table;
+    private JTextField log1TextField3;
+    private JTextField log1TextField4;
+    private JTextField log1TextField5;
+    private JTextField log1TextField7;
+    private JTextField log2TextField1;
+    private JTextField log2TextField2;
+    private JTextField log2TextField3;
+    private JTextField log2TextField4;
+    private JTextField log2TextField5;
+    private JTextField log2TextField7;
+    private JCheckBox log2checkBox;
+    private JComboBox log2comboBox;
+    private JTextField log1TextField6;
+    private JTextField log2TextField6;
+    private JButton log2ClearButton;
+    private JButton log1ClearButton;
     private Main self = this;
     private Boolean running = false;
 
@@ -51,7 +76,7 @@ public class Main{
                 if (!running) {
                     try {
                         model.openIterfaceThread(comboBox1.getSelectedIndex(),0);
-                        model.openIterfaceThread(comboBox2.getSelectedIndex(),1);
+                        //model.openIterfaceThread(comboBox2.getSelectedIndex(),1);
                     } catch (BridgeException e) {
                         e.printStackTrace();
                     }
@@ -73,42 +98,30 @@ public class Main{
             }
         });
 
-        sendFRAMEButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                JPacket packet =
-                        new JMemoryPacket(JProtocol.ETHERNET_ID,
-                                " d4ca6d33 2906dc85 de9fc9e9 08004500 "
-                                + " 003c7203 00008001 b30ac0a8 6961c0a8 "
-                                + " 2b010800 447c0001 08df6162 63646566 "
-                                + " 99999999 99999999 99999999 99999999 "
-                                + " 99999999 99999999 9999");
-                ByteBuffer bbuf = ByteBuffer.allocateDirect(packet.getTotalSize());
-                packet.transferTo(bbuf);
-                PcapPacket p2 = new PcapPacket(JMemory.Type.POINTER); // Uninitialized
-                bbuf.flip(); // Have to flip the buffer to access the just written contents
-                try {
-                    p2.peer(bbuf); // No copies, peered directly with external buffer
-                } catch (PeeringException e) {
-                    e.printStackTrace();
-                }
-                //model.sendFrame(0,p2);
-                ArrayList<NetworkInterface> interfaces = null;
-                try {
-                    interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-                    for (NetworkInterface info : interfaces){
-                        if(info.isUp()){
-                            System.out.println(info.getName());
-                        }
-                    }
-                } catch (SocketException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
         resetMacButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 model.resetMacTable();
+            }
+        });
+        setTTLButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                model.setMacTableTimer(Integer.parseInt(textFieldTTL.getText()));
+            }
+        });
+        log1ClearButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                model.getHandler(0).clearList();
+                textPane1.setText("");
+            }
+        });
+        log2ClearButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                model.getHandler(1).clearList();
+                textPane2.setText("");
             }
         });
     }
@@ -126,12 +139,17 @@ public class Main{
     private void createUIComponents() {
         textPane1 = new JTextPane();
         textPane2 = new JTextPane();
+        log1checkBox = new JCheckBox();
+        log2checkBox = new JCheckBox();
         guiMacTableModel = new GuiMacTableModel();
-        SimpleList<String>[] arrayLogs = new SimpleList[2];
-        arrayLogs[0] = new SimpleList<String>(new Logs(textPane1));
-        arrayLogs[1] = new SimpleList<String>(new Logs(textPane2));
+        SimpleList<String> logs1 = new SimpleList<String>(new Logs(textPane1,log1checkBox));
+        SimpleList<String> logs2 = new SimpleList<String>(new Logs(textPane2,log2checkBox));
+        StatisticsGroup[] statisticsArray = new StatisticsGroup[2];
+        statisticsArray[0] = new StatisticsGroup(logs1);
+        statisticsArray[1] = new StatisticsGroup(logs2);
+        guiFilterTabArray = new GuiFilterTabModel[2];
         try {
-            model = new Program(guiMacTableModel,arrayLogs);
+            model = new Program(guiMacTableModel,guiFilterTabArray,statisticsArray);
         } catch (BridgeException e) {
             e.printStackTrace();
         }
@@ -171,9 +189,11 @@ class DeviceComboBoxModel extends AbstractListModel implements ComboBoxModel{
 class Logs implements SimpleListFunction{
 
     private JTextPane textPane1;
+    private JCheckBox checkBox;
 
-    public Logs(JTextPane textPane1) {
+    public Logs(JTextPane textPane1,JCheckBox checkBox) {
         this.textPane1 = textPane1;
+        this.checkBox = checkBox;
     }
 
     @Override
@@ -188,12 +208,14 @@ class Logs implements SimpleListFunction{
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                Document doc = textPane1.getDocument();
-                try {
-                    doc.insertString(doc.getLength(),fTest,null);
-                    doc.insertString(doc.getLength(),"\n",null);
-                } catch (BadLocationException e) {
-                    e.printStackTrace();
+                if (checkBox.isSelected()){
+                    Document doc = textPane1.getDocument();
+                    try {
+                        doc.insertString(doc.getLength(),fTest,null);
+                        doc.insertString(doc.getLength(),"\n",null);
+                    } catch (BadLocationException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         });

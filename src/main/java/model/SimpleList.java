@@ -41,4 +41,8 @@ public class SimpleList<T> {
         arrayList.remove(num);
     }
 
+    public void clear(){
+        arrayList.clear();
+    }
+
 }
