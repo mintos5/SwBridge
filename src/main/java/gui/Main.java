@@ -124,6 +124,42 @@ public class Main{
                 textPane2.setText("");
             }
         });
+        addFilterButton1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                filterAdd(0);
+            }
+        });
+        removeButton1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                filterRemove(0);
+            }
+        });
+        updateButton1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                filterUpdate(0);
+            }
+        });
+        addFilterButton2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                filterAdd(1);
+            }
+        });
+        removeButton2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                filterRemove(1);
+            }
+        });
+        updateButton2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                filterUpdate(1);
+            }
+        });
     }
 
     public static void main(String[] args) {
@@ -141,13 +177,23 @@ public class Main{
         textPane2 = new JTextPane();
         log1checkBox = new JCheckBox();
         log2checkBox = new JCheckBox();
+        //MACtable
         guiMacTableModel = new GuiMacTableModel();
+        //all for statisticsArray
         SimpleList<String> logs1 = new SimpleList<String>(new Logs(textPane1,log1checkBox));
         SimpleList<String> logs2 = new SimpleList<String>(new Logs(textPane2,log2checkBox));
+        JTextField[] log1TextFields = new JTextField[8];
+        JTextField[] log2TextFields = new JTextField[8];
+        initTextFields(log1TextFields,log2TextFields);
         StatisticsGroup[] statisticsArray = new StatisticsGroup[2];
-        statisticsArray[0] = new StatisticsGroup(logs1);
-        statisticsArray[1] = new StatisticsGroup(logs2);
+        statisticsArray[0] = new StatisticsGroup(logs1,new guiStatistics(log1TextFields));
+        statisticsArray[1] = new StatisticsGroup(logs2,new guiStatistics(log2TextFields));
+        //filters
         guiFilterTabArray = new GuiFilterTabModel[2];
+        guiFilterTabArray[0] = new GuiFilterTabModel();
+        guiFilterTabArray[1] = new GuiFilterTabModel();
+        filter1Table = new JTable(guiFilterTabArray[0]);
+        filter2Table = new JTable(guiFilterTabArray[1]);
         try {
             model = new Program(guiMacTableModel,guiFilterTabArray,statisticsArray);
         } catch (BridgeException e) {
@@ -156,6 +202,63 @@ public class Main{
         table1 = new JTable(guiMacTableModel);
         comboBox1 = new JComboBox(new DeviceComboBoxModel(model));
         comboBox2 = new JComboBox(new DeviceComboBoxModel(model));
+    }
+    private void initTextFields(JTextField[] log1TextFields,JTextField[] log2TextFields){
+        log1TextFields[0] = log1TextField1 = new JTextField();
+        log1TextFields[1] = log1TextField2 = new JTextField();
+        log1TextFields[2] = log1TextField3 = new JTextField();
+        log1TextFields[3] = log1TextField4 = new JTextField();
+        log1TextFields[4] = log1TextField5 = new JTextField();
+        log1TextFields[5] = log1TextField6 = new JTextField();
+        log1TextFields[6] = log1TextField7 = new JTextField();
+
+        log2TextFields[0] = log2TextField1 = new JTextField();
+        log2TextFields[1] = log2TextField2 = new JTextField();
+        log2TextFields[2] = log2TextField3 = new JTextField();
+        log2TextFields[3] = log2TextField4 = new JTextField();
+        log2TextFields[4] = log2TextField5 = new JTextField();
+        log2TextFields[5] = log2TextField6 = new JTextField();
+        log2TextFields[6] = log2TextField7 = new JTextField();
+    }
+
+    private void filterAdd(int port){
+        FilterTableEntry entry = new AddFilter().showDialog();
+        if (entry==null){
+            return;
+        }
+        guiFilterTabArray[port].addData(entry);
+    }
+    private void filterRemove(int port){
+        if (port==0){
+            guiFilterTabArray[port].removeData(filter1Table.getSelectedRow());
+        }
+        if (port==1){
+            guiFilterTabArray[port].removeData(filter2Table.getSelectedRow());
+        }
+    }
+    private void filterUpdate(int port){
+        if (port==0){
+            int pos = filter1Table.getSelectedRow();
+            if (pos<0){
+                return;
+            }
+            FilterTableEntry entry = new AddFilter(guiFilterTabArray[port].getData(pos)).showDialog();
+            if (entry==null){
+                return;
+            }
+            guiFilterTabArray[port].updateData(pos,entry);
+        }
+        if (port==1){
+            int pos = filter2Table.getSelectedRow();
+            if (pos<0){
+                return;
+            }
+            FilterTableEntry entry = new AddFilter(guiFilterTabArray[port].getData(pos)).showDialog();
+            if (entry==null){
+                return;
+            }
+            guiFilterTabArray[port].updateData(pos,entry);
+        }
     }
 }
 
@@ -217,6 +320,29 @@ class Logs implements SimpleListFunction{
                         e.printStackTrace();
                     }
                 }
+            }
+        });
+    }
+}
+
+class guiStatistics implements StatisticsFunc{
+    private JTextField[] logTextFields;
+
+    public guiStatistics(JTextField[] logTextFields) {
+        this.logTextFields = logTextFields;
+    }
+
+    @Override
+    public void showOnGui(StatisticsGroup model) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                logTextFields[0].setText(Long.toString(model.getFrames()));
+                logTextFields[1].setText(Long.toString(model.getArp()));
+                logTextFields[2].setText(Long.toString(model.getIpv4()));
+                logTextFields[3].setText(Long.toString(model.getTcp()));
+                logTextFields[4].setText(Long.toString(model.getUdp()));
+                logTextFields[5].setText(Long.toString(model.getForwarded()));
+                logTextFields[6].setText(Long.toString(model.getProtocols()[0]));
             }
         });
     }

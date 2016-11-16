@@ -43,9 +43,9 @@ public class Program {
     }
 
     public void setLoop(int port,Boolean loop) {
-        if (loop==false){
-            table.disableTimer();
-        }
+//        if (loop==false){
+//            table.disableTimer();
+//        }
         if (port == 0) {
             this.loop0 = loop;
         }
@@ -115,6 +115,8 @@ public class Program {
             pcap = pcap1;
             pcapLock = pcapLock1;
         }
+        //TODO pridat kontrolu paketu, najprv bez synchronizacie
+        boolean test = handler0.getFilter().filterPacket(packet,false);
         setSenderFirst(port,true);
         synchronized (pcapLock) {
             System.out.println("Sending from port "+port);
