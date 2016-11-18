@@ -77,7 +77,6 @@ public class MacTable extends TimerTask{
     }
 
     private void checkMap(){
-        System.out.println("TIMER:");
         int port = -1;
         hashLock.lock();
         try {
@@ -93,11 +92,11 @@ public class MacTable extends TimerTask{
 
                 long diff = now.getTime() - entry.getValue().time.getTime();
                 if (diff > entry.getValue().ttl*1000){
-                    System.out.println("Too old for this");
+                    //System.out.println("Too old for this");
                     it.remove();
                 }
                 else {
-                    System.out.println("Whaaat");
+                    //System.out.println("Whaaat");
                     //tu bude refresh pre grafiku
                     guiTableModel.addData(entry.getKey(),entry.getValue().port,diff);
                 }

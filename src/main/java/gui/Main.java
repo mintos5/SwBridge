@@ -1,12 +1,6 @@
 package gui;
 
 import model.*;
-import org.jnetpcap.nio.JMemory;
-import org.jnetpcap.packet.JMemoryPacket;
-import org.jnetpcap.packet.JPacket;
-import org.jnetpcap.packet.PcapPacket;
-import org.jnetpcap.packet.PeeringException;
-import org.jnetpcap.protocol.JProtocol;
 
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
@@ -14,11 +8,6 @@ import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
 
 /**
  * Created by michal on 2.10.2016.
@@ -41,7 +30,6 @@ public class Main{
     private JButton setTTLButton;
     private JTextField log1TextField1;
     private JTextField log1TextField2;
-    private JComboBox log1comboBox;
     private JCheckBox log1checkBox;
     private JButton addFilterButton1;
     private JButton updateButton1;
@@ -54,15 +42,12 @@ public class Main{
     private JTextField log1TextField3;
     private JTextField log1TextField4;
     private JTextField log1TextField5;
-    private JTextField log1TextField7;
     private JTextField log2TextField1;
     private JTextField log2TextField2;
     private JTextField log2TextField3;
     private JTextField log2TextField4;
     private JTextField log2TextField5;
-    private JTextField log2TextField7;
     private JCheckBox log2checkBox;
-    private JComboBox log2comboBox;
     private JTextField log1TextField6;
     private JTextField log2TextField6;
     private JButton log2ClearButton;
@@ -76,7 +61,7 @@ public class Main{
                 if (!running) {
                     try {
                         model.openIterfaceThread(comboBox1.getSelectedIndex(),0);
-                        //model.openIterfaceThread(comboBox2.getSelectedIndex(),1);
+                        model.openIterfaceThread(comboBox2.getSelectedIndex(),1);
                     } catch (BridgeException e) {
                         e.printStackTrace();
                     }
@@ -113,14 +98,14 @@ public class Main{
         log1ClearButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                model.getHandler(0).clearList();
+                model.getHandler(0).clearStatistics();
                 textPane1.setText("");
             }
         });
         log2ClearButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                model.getHandler(1).clearList();
+                model.getHandler(1).clearStatistics();
                 textPane2.setText("");
             }
         });
@@ -210,7 +195,6 @@ public class Main{
         log1TextFields[3] = log1TextField4 = new JTextField();
         log1TextFields[4] = log1TextField5 = new JTextField();
         log1TextFields[5] = log1TextField6 = new JTextField();
-        log1TextFields[6] = log1TextField7 = new JTextField();
 
         log2TextFields[0] = log2TextField1 = new JTextField();
         log2TextFields[1] = log2TextField2 = new JTextField();
@@ -218,7 +202,6 @@ public class Main{
         log2TextFields[3] = log2TextField4 = new JTextField();
         log2TextFields[4] = log2TextField5 = new JTextField();
         log2TextFields[5] = log2TextField6 = new JTextField();
-        log2TextFields[6] = log2TextField7 = new JTextField();
     }
 
     private void filterAdd(int port){
@@ -336,13 +319,12 @@ class guiStatistics implements StatisticsFunc{
     public void showOnGui(StatisticsGroup model) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                logTextFields[0].setText(Long.toString(model.getFrames()));
-                logTextFields[1].setText(Long.toString(model.getArp()));
-                logTextFields[2].setText(Long.toString(model.getIpv4()));
-                logTextFields[3].setText(Long.toString(model.getTcp()));
-                logTextFields[4].setText(Long.toString(model.getUdp()));
-                logTextFields[5].setText(Long.toString(model.getForwarded()));
-                logTextFields[6].setText(Long.toString(model.getProtocols()[0]));
+                logTextFields[0].setText(Long.toString(model.getFrames())+"/"+Long.toString(model.getOutFrames()));
+                logTextFields[1].setText(Long.toString(model.getArp())+"/"+Long.toString(model.getOutArp()));
+                logTextFields[2].setText(Long.toString(model.getIpv4())+"/"+Long.toString(model.getOutIpv4()));
+                logTextFields[3].setText(Long.toString(model.getTcp())+"/"+Long.toString(model.getOutTcp()));
+                logTextFields[4].setText(Long.toString(model.getUdp())+"/"+Long.toString(model.getOutUdp()));
+                logTextFields[5].setText(Long.toString(model.getIcmp())+"/"+Long.toString(model.getOutIcmp()));
             }
         });
     }

@@ -76,7 +76,6 @@ public class FilterTableEntry {
     }
 
     public FilterEntry getFilterEntry(){
-        //TODO mac address checking....
         //string.contains();
         //string.replaceAll(":","");
         FilterEntry out = new FilterEntry();

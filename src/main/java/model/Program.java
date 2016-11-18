@@ -102,7 +102,7 @@ public class Program {
         }
     }
 
-    public void sendFrame(int port,PcapPacket packet){
+    public boolean sendFrame(int port,PcapPacket packet){
         //System.out.println("Sending button");
 
         Pcap pcap;
@@ -115,8 +115,11 @@ public class Program {
             pcap = pcap1;
             pcapLock = pcapLock1;
         }
-        //TODO pridat kontrolu paketu, najprv bez synchronizacie
         boolean test = handler0.getFilter().filterPacket(packet,false);
+        if (test){
+            System.out.println("Blocking outgoing");
+            return false;
+        }
         setSenderFirst(port,true);
         synchronized (pcapLock) {
             System.out.println("Sending from port "+port);
@@ -127,6 +130,7 @@ public class Program {
             setSenderFirst(port,false);
             pcapLock.notify();
         }
+        return true;
     }
 
     public void openIterfaceThread(int num, final int port) throws BridgeException{

@@ -29,7 +29,6 @@ public class GuiFilterTabModel extends AbstractTableModel {
     public void addData(FilterTableEntry input){
         model.addData(input.getFilterEntry());
         data.add(input);
-        //TODO este pridat osetrenia
         this.fireTableDataChanged();
     }
 
@@ -37,7 +36,6 @@ public class GuiFilterTabModel extends AbstractTableModel {
         if (row>=0){
             model.updateData(row,input.getFilterEntry());
             data.set(row, input);
-            //TODO este pridat osetrenia
         }
         this.fireTableDataChanged();
     }

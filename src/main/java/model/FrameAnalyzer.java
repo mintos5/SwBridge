@@ -2,6 +2,7 @@ package model;
 
 import org.jnetpcap.packet.PcapPacket;
 import org.jnetpcap.protocol.network.Arp;
+import org.jnetpcap.protocol.network.Icmp;
 import org.jnetpcap.protocol.network.Ip4;
 import org.jnetpcap.protocol.tcpip.Tcp;
 import org.jnetpcap.protocol.tcpip.Udp;
@@ -81,12 +82,27 @@ public class FrameAnalyzer {
         }
     }
 
+    public static boolean isIcmp(PcapPacket packet){
+        Icmp icmp = new Icmp();
+        if (packet.hasHeader(icmp)){
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
     public static boolean isFiltered(PcapPacket packet,boolean incoming,FilterEntry[] compare){
-        //IT ALWAYS returns if filters found something
+        //IT ALWAYS returns true if filters found something
         FilterEntry packetInfo = new FilterEntry();
         Ip4 ip = new Ip4();
         Tcp tcp = new Tcp();
         Udp udp = new Udp();
+        //checking if filters exist
+        if (compare.length==0){
+            System.out.println("No filters");
+            return false;
+        }
         //getting MAC addresses
         packetInfo.setDestMac(bytesToHex(packet.getByteArray(0,6)));
         packetInfo.setSrcMac(bytesToHex(packet.getByteArray(6,6)));
@@ -96,7 +112,8 @@ public class FrameAnalyzer {
             packetInfo.setDestIp(ip.destinationToInt());
         }
         else {
-            return true;
+            System.out.println("Not Ip packet");
+            return false;
         }
         if (packet.hasHeader(tcp)){
             packetInfo.setSrcProtocol(tcp.source());
@@ -105,10 +122,6 @@ public class FrameAnalyzer {
         if (packet.hasHeader(udp)){
             packetInfo.setSrcProtocol(udp.source());
             packetInfo.setDestProtocol(udp.destination());
-        }
-        //checking if filters exist
-        if (compare.length==0){
-            return false;
         }
         boolean result = false;
         boolean slowTest = true;
@@ -151,7 +164,7 @@ public class FrameAnalyzer {
             else {
                 if (slowTest && compare[i].getDestIp() == packetInfo.getDestIp()){
                     test = true;
-                    System.out.println("Podobna dest IP");
+                    System.out.println("Similiar dest IP");
                 }
                 else {
                     test = false;
@@ -165,7 +178,7 @@ public class FrameAnalyzer {
             else {
                 if (slowTest && compare[i].getSrcIp() == packetInfo.getSrcIp()){
                     test = true;
-                    System.out.println("Podobna source IP");
+                    System.out.println("Similiar source IP");
                 }
                 else {
                     test = false;
