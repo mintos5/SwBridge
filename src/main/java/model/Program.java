@@ -107,15 +107,18 @@ public class Program {
 
         Pcap pcap;
         Object pcapLock;
+        FrameHandler handler;
         if (port == 0) {
             pcap = pcap0;
             pcapLock = pcapLock0;
+            handler = handler0;
         }
         else {
             pcap = pcap1;
             pcapLock = pcapLock1;
+            handler = handler1;
         }
-        boolean test = handler0.getFilter().filterPacket(packet,false);
+        boolean test = handler.getFilter().filterPacket(packet,false);
         if (test){
             System.out.println("Blocking outgoing");
             return false;

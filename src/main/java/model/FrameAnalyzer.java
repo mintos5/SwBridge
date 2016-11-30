@@ -98,6 +98,10 @@ public class FrameAnalyzer {
         Ip4 ip = new Ip4();
         Tcp tcp = new Tcp();
         Udp udp = new Udp();
+        if (incoming==false){
+            System.out.println("Outgoing test");
+        }
+
         //checking if filters exist
         if (compare.length==0){
             System.out.println("No filters");

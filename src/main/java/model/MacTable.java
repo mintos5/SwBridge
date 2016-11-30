@@ -110,7 +110,7 @@ public class MacTable extends TimerTask{
 
     public int findPort(PcapPacket packet,int sourcePort){
         int port = -1;
-        System.out.println("Thread port: "+sourcePort);
+        System.out.println("From port: "+sourcePort);
         //GET destination address
         byte[] destByte = packet.getByteArray(0,6);
         String dest = bytesToHex(destByte);
